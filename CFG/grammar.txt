@@ -1,2 +1,5 @@
-﻿A -> aA|B
-B -> b
+﻿E -> TI
+I -> +TI|ε
+T -> FJ
+J -> *FJ|ε
+F -> (E)|x
