@@ -13,29 +13,23 @@ namespace CFG
         private HashSet<char> symbols = new HashSet<char>();
         private HashSet<char> nonTerminals = new HashSet<char>();
         private HashSet<char> terminals = new HashSet<char>();
+        private char startingSymbol = ' ';
 
-        public ContextFreeGrammar(string filepath)
-        {
+        public ContextFreeGrammar(string filepath) {
             string line;
             FileStream fileStream = new FileStream(filepath, FileMode.Open);
             HashSet<string> set;
 
-            using (StreamReader reader = new StreamReader(fileStream))
-            {
-                while ((line = reader.ReadLine()) != null)
-                {
-                    string[] components = line.Replace(" ", String.Empty).Split(new[] {"->", "|"}, StringSplitOptions.None);
+            using (StreamReader reader = new StreamReader(fileStream)) {
+                while ((line = reader.ReadLine()) != null) {
+                    string[] components = line.Replace(" ", String.Empty).Split(new[] { "->", "|" }, StringSplitOptions.None);
                     nonTerminals.Add(components[0][0]);
+                    startingSymbol = (startingSymbol == ' ') ? components[0][0]: startingSymbol;
                     foreach (string str in components) foreach (char c in str) symbols.Add(c);
-                    if (productions.ContainsKey(components[0][0]))
-                    {
+                    if (productions.ContainsKey(components[0][0])) {
                         set = this.productions[components[0][0]];
                         productions.Remove(components[0][0]);
-                    }
-                    else
-                    {
-                        set = new HashSet<string>();
-                    }
+                    } else set = new HashSet<string>();
                     for (int i = 1; i < components.Length; i++) set.Add(components[i]);
                     productions.Add(components[0][0], set);
                 }
@@ -56,43 +50,70 @@ namespace CFG
             //Console.WriteLine("}\n");
 
             // find firsts
-            Dictionary<char, HashSet<char>> firstsTemp;
-            do
-            {
+            Dictionary<char, HashSet<char>> temp;
+            do {
                 //Console.WriteLine("\nDoing one pass on firsts...");
-                firstsTemp = new Dictionary<char, HashSet<char>>(firsts);
-                foreach (char symbol in nonTerminals)
-                {
+                temp = new Dictionary<char, HashSet<char>>(firsts);
+                foreach (char symbol in nonTerminals) {
                     firsts.Add(symbol, First(symbol));
                     //Console.Write(symbol + " to {");
                     //foreach (char sym in firsts[symbol]) Console.Write(" " + sym + " ");
                     //Console.WriteLine("}");
                 }
-            } while (!CompareFirsts(firsts, firstsTemp));
+            } while (!CompareDicts(firsts, temp));
+            //Console.WriteLine("\n");
+
+            // find follows
+            HashSet<char> tempSet = new HashSet<char>(), carrySet;
+            tempSet.Add('$');
+            follows.Add(startingSymbol, tempSet);
+            do {
+                //Console.WriteLine("\nDoing one pass on firsts...");
+                temp = new Dictionary<char, HashSet<char>>(follows);
+                foreach (KeyValuePair<char, HashSet<string>> rule in productions) {
+                    // if this non terminal has already been dealt with before, get its current first set.
+                    foreach (string str in rule.Value) {
+                        carrySet = new HashSet<char>();
+                        if (follows.ContainsKey(rule.Key)) carrySet.UnionWith(follows[rule.Key]);
+
+                        for (int i = str.Length - 1; i >= 0; i--) {
+                            if (this.follows.ContainsKey(str[i])) {
+                                tempSet = this.follows[str[i]];
+                                follows.Remove(str[i]);
+                            }
+                            // if it hasn't beeen seen before, make a brand new first set
+                            else tempSet = new HashSet<char>();
+
+                            tempSet.UnionWith(carrySet);
+
+                            if (this.GetFirstSet(str[i]).Contains('ε')) {
+                                carrySet.UnionWith(this.GetFirstSet(str[i]));
+                                carrySet.Remove('ε');
+                            } else carrySet = new HashSet<char>(this.GetFirstSet(str[i]));
+
+                            follows.Add(str[i], tempSet);
+                    }
+                }
+                }
+            } while (!CompareDicts(follows, temp));
             //Console.WriteLine("\n");
         }
 
-        private bool CompareFirsts(Dictionary<char, HashSet<char>> one, Dictionary<char, HashSet<char>> two)
-        {
+        private bool CompareDicts(Dictionary<char, HashSet<char>> one, Dictionary<char, HashSet<char>> two) {
             if (one.Count() != two.Count()) return false;
             foreach (KeyValuePair<char, HashSet<char>> entry in one) if (!two.ContainsKey(entry.Key) || !two[entry.Key].IsSubsetOf(entry.Value) || !entry.Value.IsSubsetOf(two[entry.Key])) return false;
             return true;
         }
 
-        private HashSet<char> First(char symbol)
-        {
+        private HashSet<char> First(char symbol) {
             HashSet<char> first, firstTemp;
             // if not a non-terminal character, the first set is a singleton set containing the character itself.
-            if (!nonTerminals.Contains(symbol))
-            {
+            if (!nonTerminals.Contains(symbol)) {
                 first = new HashSet<char>();
                 first.Add(symbol);
-            }
-            else
-            {
+            } else {
                 // if this non terminal has already been dealt with before, get its current first set.
-                if (this.firsts.ContainsKey(symbol))
-                {
+                if (this.firsts.ContainsKey(symbol)) {
                     first = this.firsts[symbol];
                     firsts.Remove(symbol);
                 }
@@ -100,12 +121,10 @@ namespace CFG
                 else first = new HashSet<char>();
 
                 // now iterate over each rule for this non-terminal
-                foreach (string rule in this.productions[symbol])
-                {
+                foreach (string rule in this.productions[symbol]) {
                     // keep recursively calling this function on the first character of every rule, and then add the resulting set to the current set.
                     // if the symbol it is called on is a non terminal, whose first set contains ε, then add its result to the current set and call this function on the next character of the rule as well.
-                    for (int i = 0; i < rule.Length; i++)
-                    {
+                    for (int i = 0; i < rule.Length; i++) {
                         firstTemp = this.First(rule[i]);
                         first.UnionWith(firstTemp);
                         if (!firstTemp.Contains('ε')) break;
@@ -124,42 +143,43 @@ namespace CFG
             return first;
         }
 
-        public HashSet<string> GetRuleSet(char nonTerminal)
-        {
+        public HashSet<string> GetRuleSet(char nonTerminal) {
             return this.productions[nonTerminal];
         }
 
-        public char[] GetNonTerminalArray()
-        {
+        public char[] GetNonTerminalArray() {
             return productions.Keys.ToArray();
         }
 
-        public HashSet<char> GetFirstSet(char symbol)
-        {
+        public HashSet<char> GetFirstSet(char symbol) {
             if (firsts.ContainsKey(symbol)) return firsts[symbol];
             else return First(symbol);
         }
 
-        public HashSet<char> GetSymbols()
-        {
+        public HashSet<char> GetFollowSet(char symbol) {
+            return follows[symbol];
+        }
+
+        public HashSet<char> GetSymbols() {
             return this.symbols;
         }
 
-        public HashSet<char> GetTerminals()
-        {
+        public HashSet<char> GetTerminals() {
             return this.terminals;
         }
 
-        public HashSet<char> GetNonTerminals()
-        {
+        public HashSet<char> GetNonTerminals() {
             return this.nonTerminals;
+        }
+
+        public char GetStartingSymbol() {
+            return this.startingSymbol;
         }
     }
 
     class Program
     {
-        static void Main(string[] args)
-        {
+        static void Main(string[] args) {
             Console.OutputEncoding = System.Text.Encoding.Unicode;
             ContextFreeGrammar g = new ContextFreeGrammar("grammar.txt");
             Console.WriteLine("Grammar breakdown:- \n");
@@ -169,12 +189,20 @@ namespace CFG
                 Console.WriteLine("}");
             }
             Console.WriteLine("\n");
+            Console.WriteLine("Starting Symbol: " + g.GetStartingSymbol() + "\n");
 
             // Console.WriteLine("First Sets:- ");
-            foreach (char symbol in g.GetNonTerminals())
-            {
+            foreach (char symbol in g.GetNonTerminals()) {
                 Console.Write("FIRST(" + symbol + ") = {");
                 foreach (char sym in g.GetFirstSet(symbol)) Console.Write(" " + sym + " ");
+                Console.WriteLine("}");
+            }
+            Console.WriteLine("\n");
+
+            // Console.WriteLine("Follow Sets:- ");
+            foreach (char symbol in g.GetNonTerminals()) {
+                Console.Write("FOLLOW(" + symbol + ") = {");
+                foreach (char sym in g.GetFollowSet(symbol)) Console.Write(" " + sym + " ");
                 Console.WriteLine("}");
             }
             Console.WriteLine("\n");
