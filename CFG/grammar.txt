@@ -1,5 +1,10 @@
-﻿E -> TI
-I -> +TI|ε
-T -> FJ
-J -> *FJ|ε
-F -> (E)|x
+﻿// E -> TD
+// D -> +TD|ε
+// T -> FH
+// H -> *FH|ε
+// F -> (E)|x
+
+D -> E
+E -> E+T | T
+T -> T*F | F
+F -> (E) | x
