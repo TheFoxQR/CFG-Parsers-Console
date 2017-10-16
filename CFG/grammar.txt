@@ -1,10 +1,17 @@
-﻿// E -> TD
-// D -> +TD|ε
-// T -> FH
-// H -> *FH|ε
-// F -> (E)|x
+﻿E, E', T, T', F, (, ), +, *, id.
+E -> TE'
+E' -> +TE' | ε
+T -> FT'
+T' -> *FT' | ε
+F -> (E) | id
 
-// D -> E
-E -> E+T | T
-T -> T*F | F
-F -> (E) | x
+// E, E', T, F, (, ), id, +, *.
+// E' -> E
+// E -> E+T | T
+// T -> T*F | F
+// F -> (E) | id
+
+
+// A, B, a, b, c, d, e, q, r, s.
+// A -> a | bera | berd | c | d | e
+// B -> qac | qacd | qad | bed | s
