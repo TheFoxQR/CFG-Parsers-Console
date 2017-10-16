@@ -162,7 +162,7 @@ namespace CFG
             // method to add an lhs -> multiple handles production
             public void AddProductions (String lhs, String[] handles) {
                 int lhs_ref = refTable.Resolve(lhs);
-
+                
                 HashSet<int[]> handle_refs = new HashSet<int[]>();
                 foreach (String handle in handles) handle_refs.Add(Resolve(handle));
 
