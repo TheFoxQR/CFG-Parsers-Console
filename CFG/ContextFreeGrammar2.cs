@@ -173,7 +173,7 @@ namespace CFG
                 //    }
                 //    Console.WriteLine("]");
                 //}
-
+                
                 HashSet<KeyValuePair<int, int[]>> new_handles = new HashSet<KeyValuePair<int, int[]>>();
                 if (rules.ContainsKey(lhs_ref)) {
                     new_handles.UnionWith(this.rules[lhs_ref]);
