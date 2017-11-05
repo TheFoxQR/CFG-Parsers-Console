@@ -1,9 +1,9 @@
-﻿E, E', T, T', F, (, ), +, *, id.
-E -> TE'
-E' -> +TE' | ε
-T -> FT'
-T' -> *FT' | ε
-F -> (E) | id
+﻿// E, E', T, T', F, (, ), +, *, id.
+// E -> TE'
+// E' -> +TE' | ε
+// T -> FT'
+// T' -> *FT' | ε
+// F -> (E) | id
 
 // E, E', T, F, (, ), id, +, *.
 // E' -> E
@@ -12,6 +12,10 @@ F -> (E) | id
 // F -> (E) | id
 
 
-// A, B, a, b, c, d, e, q, r, s.
-// A -> a | bera | berd | c | d | e
-// B -> qac | qacd | qad | bed | s
+A, B, a, b, c, d, e, q, r, s.
+A -> a | bera | berd | c | d | e
+B -> qac | qacd | qad | bed | s
+
+
+// things that I can't handle
+// do not put the same handle in two seperate productions
